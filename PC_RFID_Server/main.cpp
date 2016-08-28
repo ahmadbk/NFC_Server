@@ -37,11 +37,14 @@ int main()
 		char tagID[MAX_PATH];
 		cout << "Tag ID: ";
 		cin >> tagID;
-		cout << " Tag ID: " << tagID << endl;
 
 		if (checkTag(tagID))
 		{
-			cout << "Its Working!\n";
+			cout << "Login Success\n";
+		}
+		else
+		{
+			cout << "Login not success\n";
 		}
 
 	}
@@ -111,8 +114,8 @@ bool Login(string buf, PCSTR host, char *recvData) {
 		return false;
 	}
 	else {
-		printf("Sending...\n");
-		printf("Bytes Sent: %ld\n", result);
+		//printf("Sending...\n");
+		//printf("Bytes Sent: %ld\n", result2);
 	}
 
 	result = shutdown(mySocket, SD_SEND);
@@ -129,10 +132,10 @@ bool Login(string buf, PCSTR host, char *recvData) {
 	char recvbuf[512] = { NULL };
 	result = recv(mySocket, recvbuf, recvbuflen, 0);
 	if (result > 0) {
-		printf("Bytes received: %d\n", result);
+		//printf("Bytes received: %d\n", result);
 		for (int i = 0; i < 512; i++)
 			recvData[i] = recvbuf[i];
-		cout << "\n";
+		//cout << "\n";
 	}
 	else if (result == 0)
 		printf("Connection closed\n");
@@ -150,14 +153,19 @@ bool checkTag(string tagID)
 	char recv[512];
 	if (Login(httpRequest(HOST, tagID), HOST, recv))
 	{
-		int i = 0;
-		while (recv[i] != NULL && i < 512)
-		{
-			cout << recv[i];
-			i++;
-		}
-		cout << "\n";
-		return true;
+		//int i = 0;
+		//while (recv[i] != NULL && i < 512)
+		//{
+		//	cout << recv[i];
+		//	i++;
+		//}
+		//cout << "\n";
+		string res(recv);
+		int num = res.find("not success");
+		if(num > 0 && num < 512)
+			return false;
+		else
+			return true;
 	}
 	else
 		return false;
@@ -228,7 +236,7 @@ int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET &ListenSocket, SOCKET
 		return 0;
 	}
 	else {
-		//ListenSocket is Listening good
+		//ListenSocket is Listening
 		ClientSocket = SOCKET_ERROR;
 		ClientSocket = accept(ListenSocket, NULL, NULL);  //Look for Client Connection
 		if (ClientSocket == SOCKET_ERROR) //Check if Client Connected?
