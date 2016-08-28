@@ -28,24 +28,55 @@ int main()
 	WSADATA wsaData;
 	SOCKET ListenSocket = SOCKET_ERROR; //Socket for Server to Listen on
 	SOCKET ClientSocket = SOCKET_ERROR; //Socket to store Client Connection
+
+	bool Server_Initialised = false;
+	bool Client_Connected = false;
+
 	if (int result = WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
 		printf_s("WSAStartup failed: %d\n", result);
 	}
 
 	while (true)
 	{
-		char tagID[MAX_PATH];
-		cout << "Tag ID: ";
-		cin >> tagID;
-
-		if (checkTag(tagID))
-		{
-			cout << "Login Success\n";
+		//Server Initialisation
+		if (!Server_Initialised) {
+			Server_Initialised = Create_a_listening_Socket(ListenSocket); //Create Socket for Server to Listen On
 		}
 		else
 		{
-			cout << "Login not success\n";
+			//Client Connected?
+			if (Client_Connected)
+			{//Client Connected? --> YES
+
+				//Check if Server Reinsitialisation is Necessary
+				if (!Client_Connected)
+				{
+					Server_Initialised = false;
+				}
+			}
+			else
+			{//Client Connected? --> NO
+				cout << "Client not Connected" << endl;
+				closesocket(ClientSocket);
+				cout << "Wait for Client to Connect..." << endl;
+				while (!Client_Connected) {
+					Client_Connected = Listen_on_ListenSocket_Check_For_Client_Connect(ListenSocket, ClientSocket);
+				}
+			}
 		}
+
+		//char tagID[MAX_PATH];
+		//cout << "Tag ID: ";
+		//cin >> tagID;
+
+		//if (checkTag(tagID))
+		//{
+		//	cout << "Login Success\n";
+		//}
+		//else
+		//{
+		//	cout << "Login not success\n";
+		//}
 
 	}
 
