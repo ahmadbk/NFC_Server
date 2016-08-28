@@ -5,6 +5,7 @@
 #include <Psapi.h>
 #include <sstream>
 #include <ws2tcpip.h>
+#include <process.h>
 
 #pragma comment(lib,"ws2_32.lib")
 
@@ -22,10 +23,11 @@ bool checkTag(string);
 //--------------------------------------------
 
 int Create_a_listening_Socket(SOCKET &ListenSocket);
-int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET & ListenSocket, SOCKET & ClientSocket);
+int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET & ListenSocket);
 
+unsigned int __stdcall  ServClient(void *data);
 bool Receive_Data_from_Client(const SOCKET &ClientSocket, char *received_data);
-
+bool Send_Data_to_Client(const SOCKET &ClientSocket, const char *data_to_send, const int data_to_send_byte_length);
 
 
 int main()
@@ -35,63 +37,24 @@ int main()
 	SOCKET ClientSocket = SOCKET_ERROR; //Socket to store Client Connection
 
 	bool Server_Initialised = false;
-	bool Client_Connected = false;
 
 	if (int result = WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
 		printf_s("WSAStartup failed: %d\n", result);
 	}
 
-	while (true)
+	Server_Initialised = Create_a_listening_Socket(ListenSocket);
+
+	int Result;
+	Result = Listen_on_ListenSocket_Check_For_Client_Connect(ListenSocket);
+
+	while (ClientSocket = accept(ListenSocket, NULL, NULL))
 	{
-		//Server Initialisation
-		if (!Server_Initialised) {
-			Server_Initialised = Create_a_listening_Socket(ListenSocket); //Create Socket for Server to Listen On
-		}
-		else
+		if (ClientSocket == INVALID_SOCKET) //Check if Client Connected?
 		{
-			//Client Connected?
-			if (Client_Connected)
-			{//Client Connected? --> YES
-				char recvData[DEFAULT_BUFLEN];
-				bool flag = Receive_Data_from_Client(ClientSocket, recvData);
-				if (flag)
-				{
-					int i = 0;
-					while (recvData[i] != NULL && i < 5)
-					{
-						//cout << recvData[i];
-						i++;
-					}
-					string www(recvData);
-					string tagID = www.substr(0, 3);
-					cout << tagID << endl;
-
-					if (checkTag(tagID))
-					{
-						cout << "Login Success\n";
-					}
-					else
-					{
-						cout << "Login not success\n";
-					}
-				}
-
-				//Check if Server Reinsitialisation is Necessary
-				if (!Client_Connected)
-				{
-					Server_Initialised = false;
-				}
-			}
-			else
-			{//Client Connected? --> NO
-				cout << "Client not Connected" << endl;
-				closesocket(ClientSocket);
-				cout << "Wait for Client to Connect..." << endl;
-				while (!Client_Connected) {
-					Client_Connected = Listen_on_ListenSocket_Check_For_Client_Connect(ListenSocket, ClientSocket);
-				}
-			}
+			printf("invalid client socket", GetLastError());
+			continue; //No client Connected
 		}
+		_beginthreadex(0, 0, ServClient, (void*)&ClientSocket, 0, 0);
 	}
 
 	WSACleanup();
@@ -268,7 +231,7 @@ int Create_a_listening_Socket(SOCKET &ListenSocket)
 	return 1;
 }
 
-int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET &ListenSocket, SOCKET &ClientSocket)
+int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET &ListenSocket)
 {
 	int Result;
 
@@ -280,22 +243,8 @@ int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET &ListenSocket, SOCKET
 		WSACleanup();
 		return 0;
 	}
-	else {
-		//ListenSocket is Listening
-		ClientSocket = SOCKET_ERROR;
-		ClientSocket = accept(ListenSocket, NULL, NULL);  //Look for Client Connection
-		if (ClientSocket == SOCKET_ERROR) //Check if Client Connected?
-		{
-			closesocket(ListenSocket);
-			return 0; //No client Connected
-		}
-		else {
-			cout << "Client Connected!" << endl;
-			closesocket(ListenSocket);
-			return 1; //Client Connected!
-		}
 
-	}
+	return 1;
 }
 
 bool Receive_Data_from_Client(const SOCKET &ClientSocket, char *received_data)
@@ -314,5 +263,45 @@ bool Receive_Data_from_Client(const SOCKET &ClientSocket, char *received_data)
 	else {
 		printf("recv failed with error: %d\n", WSAGetLastError());
 		return 0;
+	}
+}
+
+unsigned int __stdcall ServClient(void *data)
+{
+	SOCKET *client = (SOCKET *)data;
+	SOCKET Client = *client;
+	printf("Client connected\n");
+
+	char recvData[DEFAULT_BUFLEN];
+	bool flag = Receive_Data_from_Client(Client, recvData);
+	if (flag)
+	{
+		string www(recvData);
+		string tagID = www.substr(0, 3);
+		cout << tagID << endl;
+
+		if (checkTag(tagID))
+			Send_Data_to_Client(Client, "Login Success", strlen("Login Success"));
+		else
+			Send_Data_to_Client(Client, "Login Not Success", strlen("Login Not Success"));
+	}
+
+	closesocket(Client);
+
+	return 0;
+}
+
+bool Send_Data_to_Client(const SOCKET &ClientSocket, const char *data_to_send, const int data_to_send_byte_length)
+{
+	//Notify Client to Wait for Data
+	int iResult = send(ClientSocket, data_to_send, data_to_send_byte_length, 0);
+	if (iResult == SOCKET_ERROR) {//If sending Failed
+		wprintf(L"send failed with error: %d\n", WSAGetLastError());
+		return 0;
+	}
+	else
+	{	//If Sending Succeeded
+		Sleep(500);
+		return 1;
 	}
 }
