@@ -146,11 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="sock.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="sock_funcs.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
