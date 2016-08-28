@@ -12,6 +12,7 @@ using namespace std;
 
 #define HOST "192.168.1.72"
 #define PORT "6950"
+#define DEFAULT_BUFLEN 1000
 
 //These methods are to check the if the tag exists in the database
 //--------------------------------------------
@@ -22,6 +23,10 @@ bool checkTag(string);
 
 int Create_a_listening_Socket(SOCKET &ListenSocket);
 int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET & ListenSocket, SOCKET & ClientSocket);
+
+bool Receive_Data_from_Client(const SOCKET &ClientSocket, char *received_data);
+
+
 
 int main()
 {
@@ -47,6 +52,29 @@ int main()
 			//Client Connected?
 			if (Client_Connected)
 			{//Client Connected? --> YES
+				char recvData[DEFAULT_BUFLEN];
+				bool flag = Receive_Data_from_Client(ClientSocket, recvData);
+				if (flag)
+				{
+					int i = 0;
+					while (recvData[i] != NULL && i < 5)
+					{
+						//cout << recvData[i];
+						i++;
+					}
+					string www(recvData);
+					string tagID = www.substr(0, 3);
+					cout << tagID << endl;
+
+					if (checkTag(tagID))
+					{
+						cout << "Login Success\n";
+					}
+					else
+					{
+						cout << "Login not success\n";
+					}
+				}
 
 				//Check if Server Reinsitialisation is Necessary
 				if (!Client_Connected)
@@ -64,20 +92,6 @@ int main()
 				}
 			}
 		}
-
-		//char tagID[MAX_PATH];
-		//cout << "Tag ID: ";
-		//cin >> tagID;
-
-		//if (checkTag(tagID))
-		//{
-		//	cout << "Login Success\n";
-		//}
-		//else
-		//{
-		//	cout << "Login not success\n";
-		//}
-
 	}
 
 	WSACleanup();
@@ -281,5 +295,24 @@ int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET &ListenSocket, SOCKET
 			return 1; //Client Connected!
 		}
 
+	}
+}
+
+bool Receive_Data_from_Client(const SOCKET &ClientSocket, char *received_data)
+{
+	int Result;
+
+	Result = recv(ClientSocket, received_data, strlen(received_data), 0);
+	if (Result > 0) {
+		return 1; //Receive was a success
+	}
+	else if (Result == 0)
+	{
+		printf("Client Disconnected!\n"); //Client seems to have closed the connection
+		return 0;
+	}
+	else {
+		printf("recv failed with error: %d\n", WSAGetLastError());
+		return 0;
 	}
 }
