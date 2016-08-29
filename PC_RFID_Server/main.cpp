@@ -19,9 +19,9 @@ int numberOfClientsConnected = 0;
 
 //These methods are to check the if the tag exists in the database
 //--------------------------------------------
-string httpRequest(string, string);
-bool Login(string, PCSTR, char *);
-bool checkTag(string);
+string httpRequest(string, string,string);
+bool Connect_To_Database(string, PCSTR, char *);
+bool checkTag(string,string);
 //--------------------------------------------
 
 //These methods are to setup the server to listen for incoming connectoions
@@ -81,18 +81,24 @@ unsigned int __stdcall ServClient(void *data)
 	printf("Client %d connected\n", numberOfClientsConnected);
 
 	char recvData[DEFAULT_BUFLEN];
+	//Data should be recieved in the form of: ReaderID|TagID#
 	bool flag = Receive_Data_from_Client(Client, recvData);
 	if (flag)
 	{
 		string www(recvData);
-		string tagID = www.substr(0, 3);
-		//cout << tagID << endl;
+		int delPos = www.find('|');
+		int hashPos = www.find('#');
+		string ReaderID = www.substr(0, delPos);
+		string tagID = www.substr((delPos+1),(hashPos-delPos-1));
+		cout << "Reader ID:" << ReaderID << endl;
+		cout << "Tag ID:" << tagID << endl;
 
 		//check the database to see if the tagID exists
-		if (checkTag(tagID))
+		if (checkTag(tagID,ReaderID))
 			Send_Data_to_Client(Client, "Login Success", strlen("Login Success"));
 		else
 			Send_Data_to_Client(Client, "Login Not Success", strlen("Login Not Success"));
+		cout << "Database response sent to client " << numberOfClientsConnected << " successfully!" << endl;
 	}
 
 	closesocket(Client);
@@ -181,7 +187,7 @@ bool Receive_Data_from_Client(const SOCKET &ClientSocket, char *received_data)
 			cout << received_data[i];
 			i++;
 		}
-		cout << endl;
+		cout << received_data[i] << endl;
 		return 1; //Receive was a success
 	}
 	else if (Result == 0)
@@ -210,12 +216,12 @@ bool Send_Data_to_Client(const SOCKET &ClientSocket, const char *data_to_send, c
 	}
 }
 
-string httpRequest(string host, string tag_id)
+string httpRequest(string host, string tag_id, string reader_id)
 {
-	string logininfo = "tag_id=" + string(tag_id);
+	string logininfo = "tag_id=" + string(tag_id) + "&reader_id=" + string (reader_id);
 	int loginInfoSize = logininfo.length();
 	string header;
-	header = "POST /login1.php HTTP/1.1\r\n"; //Create a POST request
+	header = "POST /AddLocation.php HTTP/1.1\r\n"; //Create a POST request
 	header += "Host:" + host + ":80\r\n";//Works with port 80
 	header += "Content-Type: application/x-www-form-urlencoded\r\n";
 	header += "Content-Length: " + to_string(loginInfoSize) + "\r\n";
@@ -227,7 +233,7 @@ string httpRequest(string host, string tag_id)
 	return header;
 }
 
-bool Login(string buf, PCSTR host, char *recvData) {
+bool Connect_To_Database(string buf, PCSTR host, char *recvData) {
 
 	cout << "Checking Database...\n";
 
@@ -305,10 +311,10 @@ bool Login(string buf, PCSTR host, char *recvData) {
 	return true;
 }
 
-bool checkTag(string tagID)
+bool checkTag(string tagID, string readerID)
 {
 	char recv[512];
-	if (Login(httpRequest(HOST, tagID), HOST, recv))
+	if (Connect_To_Database(httpRequest(HOST, tagID,readerID), HOST, recv))
 	{
 		string res(recv);
 		int num = res.find("not success");
