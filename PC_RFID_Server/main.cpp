@@ -11,7 +11,7 @@
 
 using namespace std;
 
-#define HOST "192.168.1.72"
+#define HOST "192.168.1.66"
 #define PORT "6950"
 #define DEFAULT_BUFLEN 1000
 
@@ -95,9 +95,9 @@ unsigned int __stdcall ServClient(void *data)
 
 		//check the database to see if the tagID exists
 		if (checkTag(tagID,ReaderID))
-			Send_Data_to_Client(Client, "Login Success", strlen("Login Success"));
+			Send_Data_to_Client(Client, "11", strlen("11"));
 		else
-			Send_Data_to_Client(Client, "Login Not Success", strlen("Login Not Success"));
+			Send_Data_to_Client(Client, "00", strlen("00"));
 		cout << "Database response sent to client " << numberOfClientsConnected << " successfully!" << endl;
 	}
 
