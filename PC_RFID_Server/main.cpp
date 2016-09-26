@@ -11,7 +11,7 @@
 
 using namespace std;
 
-#define HOST "192.168.1.66"
+#define HOST "192.168.88.19"
 #define PORT "6950"
 #define DEFAULT_BUFLEN 1000
 
