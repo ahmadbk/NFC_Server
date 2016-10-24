@@ -1,3 +1,5 @@
+#include "stdafx.h"
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <winsock2.h>
 #include <Windows.h>
 #include <iostream>
@@ -11,7 +13,7 @@
 
 using namespace std;
 
-#define HOST "192.168.88.19"
+#define HOST "192.168.1.70"
 #define PORT "6950"
 #define DEFAULT_BUFLEN 1000
 
@@ -28,6 +30,7 @@ bool checkTag(string,string);
 //--------------------------------------------
 int Create_a_listening_Socket(SOCKET &ListenSocket);
 int Listen_on_ListenSocket_Check_For_Client_Connect(SOCKET & ListenSocket);
+int Send_UDP_Packet(); //Used to send the server IP adrress and Port number for the client to cmmunicate with
 //--------------------------------------------
 
 //These methods are to serve the client, recieve and send data to it
@@ -49,6 +52,8 @@ int main()
 	if (int result = WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
 		printf_s("WSAStartup failed: %d\n", result);
 	}
+
+	int numTemp = Send_UDP_Packet();
 
 	Server_Initialised = Create_a_listening_Socket(ListenSocket);
 
@@ -331,4 +336,40 @@ bool checkTag(string tagID, string readerID)
 	}
 	else
 		return false;
+}
+
+int Send_UDP_Packet()
+{
+	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock == INVALID_SOCKET)
+	{
+		perror("socket creation");
+		return 0;
+	}
+
+	BOOL enabled = TRUE;
+	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&enabled, sizeof(enabled)) < 0)
+	{
+		perror("broadcast options");
+		closesocket(sock);
+		return 0;
+	}
+	unsigned short port_num = (unsigned short)23;
+
+	struct sockaddr_in Sender_addr;
+	Sender_addr.sin_family = AF_INET;
+	Sender_addr.sin_port = htons(port_num);
+	Sender_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
+
+	for(int i = 0; i< 10; i++)
+		if (sendto(sock, PORT, strlen(PORT) + 1, 0, (sockaddr *)&Sender_addr, sizeof(Sender_addr)) < 0)
+		{
+			perror("borhot send: ");
+			closesocket(sock);
+			return 0;
+		}
+
+	cout << "UDP Packet Successfully Sent" << endl;
+	closesocket(sock);
+	return 1;
 }
