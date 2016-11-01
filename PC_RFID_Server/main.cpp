@@ -13,7 +13,7 @@
 
 using namespace std;
 
-#define HOST "192.168.1.70"
+#define HOST "192.168.88.37"
 #define PORT "6950"
 #define DEFAULT_BUFLEN 1000
 
@@ -227,7 +227,7 @@ string httpRequest(string host, string tag_id, string reader_id)
 	int loginInfoSize = logininfo.length();
 	string header;
 	header = "POST /AddLocation.php HTTP/1.1\r\n"; //Create a POST request
-	header += "Host:" + host + ":80\r\n";//Works with port 80
+	header += "Host:" + host + ":54000\r\n";//Works with port 80
 	header += "Content-Type: application/x-www-form-urlencoded\r\n";
 	header += "Content-Length: " + to_string(loginInfoSize) + "\r\n";
 	header += "Accept-Charset: utf-8\r\n";
@@ -247,7 +247,7 @@ bool Connect_To_Database(string buf, PCSTR host, char *recvData) {
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
-	int result = getaddrinfo(host, "80", &hints, &ServerInfo);
+	int result = getaddrinfo(host, "54000", &hints, &ServerInfo);
 	if (result != 0) {
 		printf("getaddrinf failed: %d\n", result);
 		return false;
